@@ -36,39 +36,30 @@ class Snake {
             }
         });
 
-        // 触摸控制
-        this.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // 防止页面滚动
-            const touch = e.touches[0];
-            const rect = this.canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            
-            // 获取蛇头位置（像素坐标）
-            const headX = this.snake[0].x * this.gridSize + this.gridSize / 2;
-            const headY = this.snake[0].y * this.gridSize + this.gridSize / 2;
+        // 虚拟按键控制
+        const buttons = {
+            'upBtn': 'up',
+            'downBtn': 'down',
+            'leftBtn': 'left',
+            'rightBtn': 'right'
+        };
 
-            // 计算点击位置相对于蛇头的位置
-            const deltaX = x - headX;
-            const deltaY = y - headY;
+        Object.entries(buttons).forEach(([btnId, direction]) => {
+            const button = document.getElementById(btnId);
+            if (button) {
+                // 处理触摸事件
+                button.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionChange(direction);
+                });
 
-            // 根据点击位置相对于蛇头的位置决定方向
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                // 水平移动
-                if (deltaX > 0) {
-                    this.handleDirectionChange('right');
-                } else {
-                    this.handleDirectionChange('left');
-                }
-            } else {
-                // 垂直移动
-                if (deltaY > 0) {
-                    this.handleDirectionChange('down');
-                } else {
-                    this.handleDirectionChange('up');
-                }
+                // 处理鼠标点击事件（用于测试）
+                button.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionChange(direction);
+                });
             }
-        }, { passive: false });
+        });
 
         // 阻止移动端双击缩放
         this.canvas.addEventListener('touchend', (e) => {

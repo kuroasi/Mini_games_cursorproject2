@@ -65,6 +65,49 @@ h1 {
     font-size: 14px;
 }
 
+#virtualControls {
+    display: none;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.control-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 5px 0;
+}
+
+#virtualControls button {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    border: 2px solid #4CAF50;
+    background-color: white;
+    border-radius: 10px;
+    color: #4CAF50;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#virtualControls button:active {
+    background-color: #4CAF50;
+    color: white;
+}
+
+/* 在移动设备上显示虚拟控制器 */
+@media (max-width: 768px) {
+    #virtualControls {
+        display: block;
+    }
+}
+
 @media (max-width: 500px) {
     .game-container {
         padding: 10px;
