@@ -5,7 +5,7 @@ class Snake {
         this.gridSize = 20;
         // 修改速度相关的属性
         this.initialSpeed = 300;    // 初始速度（毫秒/帧，数值大表示移动慢）
-        this.targetSpeed = 80;      // 目标速度（毫秒/帧，数值小表示移动快）
+        this.targetSpeed = 150;     // 目标速度（毫秒/帧，数值小表示移动快）
         this.currentSpeed = this.initialSpeed;  // 当前速度
         this.speedIncreaseRate = 3; // 每次加速减少的毫秒数
         this.reset();
