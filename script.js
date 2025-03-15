@@ -3,6 +3,11 @@ class Snake {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.gridSize = 20;
+        // 修改速度相关的属性
+        this.initialSpeed = 300;    // 初始速度（毫秒/帧，数值大表示移动慢）
+        this.targetSpeed = 80;      // 目标速度（毫秒/帧，数值小表示移动快）
+        this.currentSpeed = this.initialSpeed;  // 当前速度
+        this.speedIncreaseRate = 3; // 每次加速减少的毫秒数
         this.reset();
 
         // 绑定事件处理器
@@ -89,6 +94,8 @@ class Snake {
         this.food = this.generateFood();
         this.score = 0;
         this.gameOver = false;
+        // 重置速度
+        this.currentSpeed = this.initialSpeed;
         this.updateScore();
     }
 
@@ -409,6 +416,13 @@ class Snake {
     updateScore() {
         document.getElementById('score').textContent = this.score;
     }
+
+    // 添加速度更新方法
+    updateSpeed() {
+        if (this.currentSpeed > this.targetSpeed) {
+            this.currentSpeed = Math.max(this.targetSpeed, this.currentSpeed - this.speedIncreaseRate);
+        }
+    }
 }
 
 // 游戏初始化
@@ -425,15 +439,23 @@ startBtn.addEventListener('click', () => {
     if (gameLoop) clearInterval(gameLoop);
     
     // 开始新的游戏循环
-    gameLoop = setInterval(() => {
+    const runGameLoop = () => {
         game.update();
         game.draw();
+        game.updateSpeed();  // 更新速度
         
         if (game.gameOver) {
-            clearInterval(gameLoop);
+            clearTimeout(gameLoop);
             startBtn.textContent = '重新开始';
+            return;
         }
-    }, 100);
+        
+        // 使用当前速度设置下一帧的延迟
+        gameLoop = setTimeout(runGameLoop, game.currentSpeed);
+    };
+    
+    // 启动游戏循环
+    runGameLoop();
     
     startBtn.textContent = '重新开始';
 }); 
