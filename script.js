@@ -5,123 +5,8 @@ class Snake {
         this.gridSize = 20;
         this.reset();
 
-        // 添加触摸控制状态
-        this.touchStartX = null;
-        this.touchStartY = null;
-        this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
         // 绑定事件处理器
         this.bindEvents();
-        
-        // 如果是移动设备，创建虚拟控制按钮
-        if (this.isMobile) {
-            this.createMobileControls();
-        }
-    }
-
-    createMobileControls() {
-        const controls = document.createElement('div');
-        controls.className = 'mobile-controls';
-        controls.innerHTML = `
-            <div class="control-row">
-                <button id="upBtn">↑</button>
-            </div>
-            <div class="control-row">
-                <button id="leftBtn">←</button>
-                <button id="rightBtn">→</button>
-            </div>
-            <div class="control-row">
-                <button id="downBtn">↓</button>
-            </div>
-        `;
-        
-        // 添加样式
-        const style = document.createElement('style');
-        style.textContent = `
-            .mobile-controls {
-                display: none;
-                position: fixed;
-                bottom: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(255, 255, 255, 0.3);
-                padding: 10px;
-                border-radius: 10px;
-                z-index: 1000;
-            }
-            @media (max-width: 768px) {
-                .mobile-controls {
-                    display: block;
-                }
-            }
-            .control-row {
-                display: flex;
-                justify-content: center;
-                margin: 5px 0;
-            }
-            .mobile-controls button {
-                width: 50px;
-                height: 50px;
-                margin: 5px;
-                border: none;
-                background: rgba(255, 255, 255, 0.8);
-                border-radius: 25px;
-                font-size: 24px;
-                color: #333;
-                cursor: pointer;
-                touch-action: manipulation;
-            }
-            .mobile-controls button:active {
-                background: rgba(200, 200, 200, 0.8);
-            }
-        `;
-        document.head.appendChild(style);
-        document.body.appendChild(controls);
-
-        // 添加按钮事件监听
-        const buttons = {
-            'upBtn': 'up',
-            'downBtn': 'down',
-            'leftBtn': 'left',
-            'rightBtn': 'right'
-        };
-
-        Object.entries(buttons).forEach(([btnId, direction]) => {
-            const button = document.getElementById(btnId);
-            button.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                this.handleDirectionChange(direction);
-            });
-            button.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                this.handleDirectionChange(direction);
-            });
-        });
-    }
-
-    handleDirectionChange(newDirection) {
-        const opposites = {
-            'up': 'down',
-            'down': 'up',
-            'left': 'right',
-            'right': 'left'
-        };
-        
-        // 防止反向移动
-        if (this.direction !== opposites[newDirection]) {
-            this.nextDirection = newDirection;
-        }
-    }
-
-    reset() {
-        // 初始化蛇的位置和方向
-        this.snake = [{x: 10, y: 10}];
-        this.direction = 'right';
-        this.nextDirection = 'right';
-        this.food = this.generateFood();
-        this.score = 0;
-        this.gameOver = false;
-        this.updateScore();
     }
 
     bindEvents() {
@@ -152,44 +37,68 @@ class Snake {
         });
 
         // 触摸控制
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchEndX = 0;
-        let touchEndY = 0;
-
         this.canvas.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-        }, false);
-
-        this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault(); // 防止页面滚动
-        }, false);
+            const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            // 获取蛇头位置（像素坐标）
+            const headX = this.snake[0].x * this.gridSize + this.gridSize / 2;
+            const headY = this.snake[0].y * this.gridSize + this.gridSize / 2;
 
-        this.canvas.addEventListener('touchend', (e) => {
-            touchEndX = e.changedTouches[0].clientX;
-            touchEndY = e.changedTouches[0].clientY;
+            // 计算点击位置相对于蛇头的位置
+            const deltaX = x - headX;
+            const deltaY = y - headY;
 
-            const deltaX = touchEndX - touchStartX;
-            const deltaY = touchEndY - touchStartY;
-
-            // 确定滑动方向
+            // 根据点击位置相对于蛇头的位置决定方向
             if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                // 水平滑动
-                if (deltaX > 50) {
+                // 水平移动
+                if (deltaX > 0) {
                     this.handleDirectionChange('right');
-                } else if (deltaX < -50) {
+                } else {
                     this.handleDirectionChange('left');
                 }
             } else {
-                // 垂直滑动
-                if (deltaY > 50) {
+                // 垂直移动
+                if (deltaY > 0) {
                     this.handleDirectionChange('down');
-                } else if (deltaY < -50) {
+                } else {
                     this.handleDirectionChange('up');
                 }
             }
-        }, false);
+        }, { passive: false });
+
+        // 阻止移动端双击缩放
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+    }
+
+    handleDirectionChange(newDirection) {
+        const opposites = {
+            'up': 'down',
+            'down': 'up',
+            'left': 'right',
+            'right': 'left'
+        };
+        
+        // 防止反向移动
+        if (this.direction !== opposites[newDirection]) {
+            this.nextDirection = newDirection;
+        }
+    }
+
+    reset() {
+        // 初始化蛇的位置和方向
+        this.snake = [{x: 10, y: 10}];
+        this.direction = 'right';
+        this.nextDirection = 'right';
+        this.food = this.generateFood();
+        this.score = 0;
+        this.gameOver = false;
+        this.updateScore();
     }
 
     generateFood() {
