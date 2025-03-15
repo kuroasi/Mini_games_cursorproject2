@@ -5,8 +5,112 @@ class Snake {
         this.gridSize = 20;
         this.reset();
 
+        // 添加触摸控制状态
+        this.touchStartX = null;
+        this.touchStartY = null;
+        this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
         // 绑定事件处理器
         this.bindEvents();
+        
+        // 如果是移动设备，创建虚拟控制按钮
+        if (this.isMobile) {
+            this.createMobileControls();
+        }
+    }
+
+    createMobileControls() {
+        const controls = document.createElement('div');
+        controls.className = 'mobile-controls';
+        controls.innerHTML = `
+            <div class="control-row">
+                <button id="upBtn">↑</button>
+            </div>
+            <div class="control-row">
+                <button id="leftBtn">←</button>
+                <button id="rightBtn">→</button>
+            </div>
+            <div class="control-row">
+                <button id="downBtn">↓</button>
+            </div>
+        `;
+        
+        // 添加样式
+        const style = document.createElement('style');
+        style.textContent = `
+            .mobile-controls {
+                display: none;
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(255, 255, 255, 0.3);
+                padding: 10px;
+                border-radius: 10px;
+                z-index: 1000;
+            }
+            @media (max-width: 768px) {
+                .mobile-controls {
+                    display: block;
+                }
+            }
+            .control-row {
+                display: flex;
+                justify-content: center;
+                margin: 5px 0;
+            }
+            .mobile-controls button {
+                width: 50px;
+                height: 50px;
+                margin: 5px;
+                border: none;
+                background: rgba(255, 255, 255, 0.8);
+                border-radius: 25px;
+                font-size: 24px;
+                color: #333;
+                cursor: pointer;
+                touch-action: manipulation;
+            }
+            .mobile-controls button:active {
+                background: rgba(200, 200, 200, 0.8);
+            }
+        `;
+        document.head.appendChild(style);
+        document.body.appendChild(controls);
+
+        // 添加按钮事件监听
+        const buttons = {
+            'upBtn': 'up',
+            'downBtn': 'down',
+            'leftBtn': 'left',
+            'rightBtn': 'right'
+        };
+
+        Object.entries(buttons).forEach(([btnId, direction]) => {
+            const button = document.getElementById(btnId);
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.handleDirectionChange(direction);
+            });
+            button.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this.handleDirectionChange(direction);
+            });
+        });
+    }
+
+    handleDirectionChange(newDirection) {
+        const opposites = {
+            'up': 'down',
+            'down': 'up',
+            'left': 'right',
+            'right': 'left'
+        };
+        
+        // 防止反向移动
+        if (this.direction !== opposites[newDirection]) {
+            this.nextDirection = newDirection;
+        }
     }
 
     reset() {
@@ -27,22 +131,22 @@ class Snake {
                 case 'ArrowUp':
                 case 'w':
                 case 'W':
-                    if (this.direction !== 'down') this.nextDirection = 'up';
+                    this.handleDirectionChange('up');
                     break;
                 case 'ArrowDown':
                 case 's':
                 case 'S':
-                    if (this.direction !== 'up') this.nextDirection = 'down';
+                    this.handleDirectionChange('down');
                     break;
                 case 'ArrowLeft':
                 case 'a':
                 case 'A':
-                    if (this.direction !== 'right') this.nextDirection = 'left';
+                    this.handleDirectionChange('left');
                     break;
                 case 'ArrowRight':
                 case 'd':
                 case 'D':
-                    if (this.direction !== 'left') this.nextDirection = 'right';
+                    this.handleDirectionChange('right');
                     break;
             }
         });
@@ -50,33 +154,42 @@ class Snake {
         // 触摸控制
         let touchStartX = 0;
         let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
 
         this.canvas.addEventListener('touchstart', (e) => {
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
-        });
+        }, false);
+
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // 防止页面滚动
+        }, false);
 
         this.canvas.addEventListener('touchend', (e) => {
-            const touchEndX = e.changedTouches[0].clientX;
-            const touchEndY = e.changedTouches[0].clientY;
-            
+            touchEndX = e.changedTouches[0].clientX;
+            touchEndY = e.changedTouches[0].clientY;
+
             const deltaX = touchEndX - touchStartX;
             const deltaY = touchEndY - touchStartY;
 
+            // 确定滑动方向
             if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                if (deltaX > 0 && this.direction !== 'left') {
-                    this.nextDirection = 'right';
-                } else if (deltaX < 0 && this.direction !== 'right') {
-                    this.nextDirection = 'left';
+                // 水平滑动
+                if (deltaX > 50) {
+                    this.handleDirectionChange('right');
+                } else if (deltaX < -50) {
+                    this.handleDirectionChange('left');
                 }
             } else {
-                if (deltaY > 0 && this.direction !== 'up') {
-                    this.nextDirection = 'down';
-                } else if (deltaY < 0 && this.direction !== 'down') {
-                    this.nextDirection = 'up';
+                // 垂直滑动
+                if (deltaY > 50) {
+                    this.handleDirectionChange('down');
+                } else if (deltaY < -50) {
+                    this.handleDirectionChange('up');
                 }
             }
-        });
+        }, false);
     }
 
     generateFood() {
